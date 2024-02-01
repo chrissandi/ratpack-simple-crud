@@ -13,12 +13,14 @@ public class ProductHandler{
             ctx.byMethod(method -> method
                     .get(() -> {
                         productService.getAllProducts()
+                                .onError(
+                                    throwable -> {
+                                        ctx.render(throwable.getMessage());
+                                    }
+                                )
                                 .then(products -> {
-                                    if (!products.isEmpty()) {
-                                        ctx.render(Jackson.json(products));
-                                    } else {
-                                        ctx.clientError(404);
-                                    }});
+                                    ctx.render(Jackson.json(products));
+                                });
                     })
                     .post(() -> {
                         ctx.parse(Jackson.fromJson(Product.class))
@@ -41,13 +43,14 @@ public class ProductHandler{
                     .get(() -> {
                         Long id = Long.parseLong(ctx.getPathTokens().get("id"));
                         productService.getProductById(id)
+                                .onError(
+                                    throwable -> {
+                                        ctx.render(throwable.getMessage());
+                                    }
+                                )
                                 .then(product -> {
-                                    if (product!=null) {
-                                        ctx.render(Jackson.json(product));
-                                    } else {
-                                        ctx.clientError(404);
-                                    }}
-                                );
+                                    ctx.render(Jackson.json(product));
+                                });
 
                     })
                     .put(() -> {
@@ -66,7 +69,9 @@ public class ProductHandler{
                     .delete(() -> {
                         Long id = Long.parseLong(ctx.getPathTokens().get("id"));
                         productService.deleteProduct(id)
-                                .onError(throwable -> ctx.clientError(404))
+                                .onError(throwable -> {
+                                    ctx.render(throwable.getMessage());
+                                })
                                 .then(v -> ctx.render("Product deleted successfully"));
                     })
             );

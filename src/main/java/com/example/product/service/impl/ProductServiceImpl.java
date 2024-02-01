@@ -1,5 +1,6 @@
 package com.example.product.service.impl;
 
+import com.example.product.exception.ProductNotFoundException;
 import com.example.product.model.Product;
 import com.example.product.repository.ProductRepository;
 import com.example.product.service.ProductService;
@@ -20,12 +21,27 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Promise<List<Product>> getAllProducts() {
-        return Blocking.get(() -> productRepository.getAllProducts());
+        return Blocking.get(() -> {
+            List<Product> productList = productRepository.getAllProducts();
+
+            if(productList.isEmpty()){
+                throw new ProductNotFoundException("No products found");
+            }
+            return productList;
+        });
     }
 
     @Override
     public Promise<Product> getProductById(Long id) {
-        return Blocking.get(() -> productRepository.getProductById(id));
+        return Blocking.get(() -> {
+
+            Product existingProduct = productRepository.getProductById(id);
+
+            if (existingProduct == null) {
+                throw new ProductNotFoundException("Product with ID " + id + " not found");
+            }
+            return existingProduct;
+        });
     }
 
     @Override
@@ -49,6 +65,7 @@ public class ProductServiceImpl implements ProductService {
             }
 
             return null;
+
         });
     }
 
@@ -57,9 +74,11 @@ public class ProductServiceImpl implements ProductService {
         return Blocking.get(() -> {
             Product product = productRepository.getProductById(id);
 
-            if (product != null) {
-                productRepository.deleteProduct(id);
+            if (product == null) {
+                throw new ProductNotFoundException("Product with ID " + id + " not found");
             }
+
+            productRepository.deleteProduct(id);
 
             return null;
         });
